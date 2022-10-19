@@ -39,15 +39,17 @@ const Testing = () => {
         return aboveFirstLvl.filter(({child}) => child.length === 0)
     }
 
-    const onHandleChoose = (videoId, lvl) => {
+    const onHandleChoose = (videoId) => {
+        //формирование списка не интересных профессий
         const notInteresting = activeProfs.find(({id}) => id !== videoId)
         const notInterestingVideos = [...notInterestingProf, notInteresting]
         setNotInterestingProf(notInterestingVideos)
 
+        //убрать из списка просмотренные профессии
         let sort = allActiveProf.filter((prof) => prof.id !== videoId)
         sort = sort.filter((prof) => prof.id !== notInteresting.id)
         setAllActiveProf(sort)
-
+        //формирование списка интересных профессий
         const interestingVideo = videos.find(({id}) => id === videoId)
         const interestingVideos = [...interestingProf, interestingVideo]
         setInterestingProf(interestingVideos)
@@ -55,16 +57,21 @@ const Testing = () => {
         if (sort.length >= 2) {
             setActiveProfs([sort[0], sort[1]])
         }
-        if (sort.length < 2) {
+
+        if (sort.length < 2 ) {
+
             const childIds = interestingVideos.map(({child}) => child).flat(1)
             const viewed = displayedVideos.flat(1)
+            //проверить child на повторное отображение
             const childIdsDisplayedFilter = childIds.filter(child => !viewed.includes(child))
-
             const childs = videos.filter(({id}) => childIdsDisplayedFilter.includes(id))
+            //вывести на экран
             childs.length > 0 && setActiveProfs([childs[0], childs[1]])
+            //запомнить новый список профессий
             setAllActiveProf(childs)
 
             if (childs.length === 0 || childs.length === 1) {
+                //больше нет профессий очистить поля и отрисовать результаты
                 setInterestingProf(lvlFilter(interestingVideos))
                 setNotInterestingProf(lvlFilter(notInterestingVideos))
                 setIsEnd(!isEnd)
@@ -72,6 +79,7 @@ const Testing = () => {
         }
     }
 
+    //начать заново
     const onRepeatClick = () => {
         startSet()
         setInterestingProf([])

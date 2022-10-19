@@ -2,12 +2,12 @@ import React, {useState} from 'react';
 import styles from './Player.module.css'
 
 const Player = ({videoData, onChoose}) => {
-    const {video, title, desc, subDesc, id, lvl} = videoData
+    const {video, title, desc, subDesc, id} = videoData
     const [srs, setSrc] = useState(0)
 
     const srsLength = video.src.length
     const onProfClick = () => {
-        onChoose(id, lvl)
+        onChoose(id)
     }
 
     const onFollowClick = () => {
