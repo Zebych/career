@@ -1,0 +1,23 @@
+.container {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+}
+
+.btn_block {
+    margin-top: 50px;
+}
+
+.link_block {
+    display: flex;
+    flex-direction: column;
+    margin: 20px
+}
+.links_container {
+    display: flex;
+    min-width: 50vw;
+    align-items: center;
+    justify-content: space-evenly;
+}

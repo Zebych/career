@@ -1,3 +1,7 @@
+
+before starting the application, you need to run the command in the terminal "yarn" to start the local host "yarn start"
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
