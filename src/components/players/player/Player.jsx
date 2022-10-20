@@ -2,12 +2,14 @@ import React, {useState} from 'react';
 import styles from './Player.module.css'
 
 const Player = ({videoData, onChoose}) => {
-    const {video, title, desc, subDesc, id} = videoData
+    const {videosList, title, desc, subDesc, id} = videoData
     const [srs, setSrc] = useState(0)
 
-    const srsLength = video.src.length
+    const srsLength = videosList.length
+
     const onProfClick = () => {
         onChoose(id)
+        setSrc(0)
     }
 
     const onFollowClick = () => {
@@ -23,11 +25,13 @@ const Player = ({videoData, onChoose}) => {
             <div className={styles.video_block}>
                 <h1 className={styles.title}>{title}</h1>
                 <video onEnded={onFollowClick}
-                       controls src={video.src[srs]} width={'700px'} height={'400px'}/>
-                <div className={styles.video_desc}>{video.desc}</div>
+                       controls src={videosList[srs].src} width={'700px'}
+                       height={'400px'}/>
+                <div className={styles.video_desc}>{videosList[srs].desc}</div>
                 <div className={styles.follow_btn}>
                     <span className={srsLength <= 1 ? styles.disabled : styles.next_btn}
-                          onClick={onFollowClick}>Показать следующее видео
+                          onClick={onFollowClick}>
+                        Показать следующее видео
                     </span>
                 </div>
                 <div>{desc}</div>

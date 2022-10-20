@@ -40,6 +40,7 @@ const Testing = () => {
     }
 
     const onHandleChoose = (videoId) => {
+
         //формирование списка не интересных профессий
         const notInteresting = activeProfs.find(({id}) => id !== videoId)
         const notInterestingVideos = [...notInterestingProf, notInteresting]
