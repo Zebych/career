@@ -15,17 +15,12 @@ const Testing = () => {
     const [activeProfs, setActiveProfs] = useState([])
     const [allActiveProf, setAllActiveProf] = useState([])
     const [interestingProf, setInterestingProf] = useState([])
-    const [notInterestingProf, setNotInterestingProf] = useState([])
-    const [displayedVideos, setDisplayedVideos] = useState([])
     const [isEnd, setIsEnd] = useState(false)
+    const [sortList, setSortList] = useState([])
 
     useEffect(() => {
         startSet()
     }, [])
-
-    useEffect(() => {
-        setDisplayedVideos([...displayedVideos, activeProfs.map(({id}) => id)])
-    }, [activeProfs])
 
     const startSet = () => {
         const startVideo = videos.filter(({id}) => startVideos.includes(id))
@@ -34,58 +29,69 @@ const Testing = () => {
         setActiveProfs(startVideo)
     }
 
-    const lvlFilter = (prof) => {
-        const aboveFirstLvl = prof.filter(({lvl}) => lvl !== 1)
-        return aboveFirstLvl.filter(({child}) => child.length === 0)
+    //найти менее интересную работу
+    const notInterestingId = (videoId) => activeProfs.find(({id}) => id !== videoId).id
+
+    //следующая профессия
+    const nextProf = (int, notInt) => {
+        let sort = allActiveProf.filter((prof) => prof.id !== int)
+        return sort.filter((prof) => prof.id !== notInt)[0]
+    }
+    const currentProf = (profId) => {
+        return allActiveProf.find(({id}) => id === profId)
+    }
+
+    const sortProf = (videoId) => {
+        if (sortList.length === 0) {
+            sortList.push(currentProf(videoId))
+            sortList.push(currentProf(notInterestingId(videoId)))
+
+            setActiveProfs([sortList[0], nextProf(videoId, notInterestingId(videoId))])
+            setSortList(sortList)
+        } else {
+            const isThere = sortList.some(({id}) => id === videoId)
+            if (isThere) {
+                const currentIdxProf = sortList.findIndex(({id}) => id === videoId)
+                if(sortList[currentIdxProf + 1]){
+                    setActiveProfs([sortList[currentIdxProf + 1], currentProf(notInterestingId(videoId))])
+                }else{
+                    sortList.push(currentProf(notInterestingId(videoId)))
+                    setSortList(sortList)
+                    const nextProf = allActiveProf.filter(prof => !sortList.includes(prof))[0]
+                    if (nextProf) {
+                        setActiveProfs([sortList[0], nextProf])
+                    } else {
+                        setInterestingProf(sortList)
+                        setIsEnd(!isEnd)
+                    }
+                }
+
+            } else {
+                const notIntProfIdx = sortList.findIndex(({id}) => id === notInterestingId(videoId))
+                sortList.splice(notIntProfIdx, 0, currentProf(videoId));
+                setSortList(sortList)
+                const nextProf = allActiveProf.filter(prof => !sortList.includes(prof))[0]
+                if (nextProf) {
+                    setActiveProfs([sortList[0], nextProf])
+                } else {
+                    setInterestingProf(sortList)
+
+                    setIsEnd(!isEnd)
+                }
+            }
+        }
     }
 
     const onHandleChoose = (videoId) => {
 
-        //формирование списка не интересных профессий
-        const notInteresting = activeProfs.find(({id}) => id !== videoId)
-        const notInterestingVideos = [...notInterestingProf, notInteresting]
-        setNotInterestingProf(notInterestingVideos)
-
-        //убрать из списка просмотренные профессии
-        let sort = allActiveProf.filter((prof) => prof.id !== videoId)
-        sort = sort.filter((prof) => prof.id !== notInteresting.id)
-        setAllActiveProf(sort)
-        //формирование списка интересных профессий
-        const interestingVideo = videos.find(({id}) => id === videoId)
-        const interestingVideos = [...interestingProf, interestingVideo]
-        setInterestingProf(interestingVideos)
-
-        if (sort.length >= 2) {
-            setActiveProfs([sort[0], sort[1]])
-        }
-
-        if (sort.length < 2 ) {
-
-            const childIds = interestingVideos.map(({child}) => child).flat(1)
-            const viewed = displayedVideos.flat(1)
-            //проверить child на повторное отображение
-            const childIdsDisplayedFilter = childIds.filter(child => !viewed.includes(child))
-            const childs = videos.filter(({id}) => childIdsDisplayedFilter.includes(id))
-            //вывести на экран
-            childs.length > 0 && setActiveProfs([childs[0], childs[1]])
-            //запомнить новый список профессий
-            setAllActiveProf(childs)
-
-            if (childs.length === 0 || childs.length === 1) {
-                //больше нет профессий очистить поля и отрисовать результаты
-                setInterestingProf(lvlFilter(interestingVideos))
-                setNotInterestingProf(lvlFilter(notInterestingVideos))
-                setIsEnd(!isEnd)
-            }
-        }
+        sortProf(videoId)
     }
 
     //начать заново
     const onRepeatClick = () => {
         startSet()
         setInterestingProf([])
-        setDisplayedVideos([])
-        setNotInterestingProf([])
+        setSortList([])
         setIsEnd(!isEnd)
 
     }
@@ -95,7 +101,6 @@ const Testing = () => {
             {isEnd
                 ? <ResList
                     interestingProf={interestingProf}
-                    notInterestingProf={notInterestingProf}
                     onRepeatClick={onRepeatClick}
                 />
                 : <PlayerList
