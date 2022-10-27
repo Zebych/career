@@ -27,10 +27,6 @@ const Testing = () => {
     }, [activeProfs])
 
     useEffect(() => {
-        middleAllActiveProf()
-    }, [allActiveProf])
-
-    const middleAllActiveProf = () => {
         if (allActiveProf.length > 2) {
             let halfLength = allActiveProf.length / 2
 
@@ -43,6 +39,14 @@ const Testing = () => {
                 setActiveProfs([startVideo, follow])
             }
         }
+        if (allActiveProf.length > 0) {
+            setActiveProfs([allActiveProf[0], allActiveProf[1]])
+        }
+    }, [allActiveProf])
+
+    const startSet = () => {
+        const allProfs = videos.filter(({lvl}) => lvl === 1)
+        setAllActiveProf(allProfs)
     }
 
     const middleSortList = () => {
@@ -56,11 +60,6 @@ const Testing = () => {
         }
     }
 
-    const startSet = () => {
-        const allProfs = videos.filter(({lvl}) => lvl === 1)
-        setAllActiveProf(allProfs)
-    }
-
     const lvlFilter = (prof) => {
         const aboveFirstLvl = prof.filter(({lvl}) => lvl !== 1)
         return aboveFirstLvl.filter(({child}) => child.length === 0)
@@ -72,7 +71,8 @@ const Testing = () => {
     //следующая профессия
     const nextProf = (int, notInt) => {
         let sort = allActiveProf.filter((prof) => prof.id !== int)
-        return sort.filter((prof) => prof.id !== notInt)[0]
+        const newAllActiveProf = sort.filter((prof) => prof.id !== notInt)
+        return newAllActiveProf[middleProfIdx(newAllActiveProf)]
     }
 
     const currentProf = (profId) => {
@@ -85,6 +85,15 @@ const Testing = () => {
         for (let i = 0; i < a.length; i++)
             if (a[i] !== b[i]) return false;
         return true;
+    }
+
+    const middleProfIdx = (list) => {
+        let halfLength = list.length / 2
+        if (halfLength % 2 === 0) {
+            return halfLength === 0 ? halfLength : halfLength - 1
+        } else {
+            return Math.floor(halfLength)
+        }
     }
 
     const notProf = () => {
@@ -120,7 +129,6 @@ const Testing = () => {
         if (sortList.length === 0 && nextProf(videoId, notInterestingId(videoId))) {
             sortList.push(currentProf(videoId))
             sortList.push(currentProf(notInterestingId(videoId)))
-
             setActiveProfs([sortList[0], nextProf(videoId, notInterestingId(videoId))])
             setSortList(sortList)
         } else {
@@ -129,43 +137,74 @@ const Testing = () => {
             //если выбранная профессия уже есть в сортированном списке
             if (isThere) {
                 const currentIdxProf = sortList.findIndex(({id}) => id === videoId)
-                const nextProf = sortList.length < sortList.length + 1 && sortList[currentIdxProf + 1]
 
-                if (nextProf) {
-                    //проверка на повторную отрисовку
-                    const displayed = displayedVideos.map(profs => equalArrays(profs, [nextProf.id, currentProf(notInterestingId(videoId)).id])).includes(true)
-                    if (!displayed) {
-                        setActiveProfs([nextProf, currentProf(notInterestingId(videoId))])
+                let nextProf = () => {
+                    let nextProf
+                    if (sortList.some(({lvl}) => lvl === 1)) {
+
+                        nextProf = sortList.length < sortList.length + 1 && sortList[currentIdxProf + 1]
                     } else {
-                        sortList.splice(currentIdxProf + 1, 0, currentProf(notInterestingId(videoId)));
-                        setSortList(sortList)
-                        const nextAllProf = allActiveProf.filter(prof => !sortList.includes(prof))[0]
-                        nextAllProf ? setActiveProfs([middleSortList(), nextAllProf]) : notProf()
+                        const prevCombinations = displayedVideos[displayedVideos.length - 2]
+                        const prevProf = prevCombinations.filter(prof => prof !== notInterestingId(videoId))
+                        const idxPrevProf = sortList.findIndex(({id}) => id === prevProf[0])
+                        let profCompare = sortList.filter((prof, i) => i > currentIdxProf)
+                        if (sortList.length > 2 && currentIdxProf < middleProfIdx(sortList)) {
+                            profCompare = sortList.filter((prof, i) => i > currentIdxProf && i < idxPrevProf)
+                        }
+                        nextProf = profCompare[middleProfIdx(profCompare)]
                     }
+                    return nextProf
+                }
+                const displayed = nextProf()
+                    ? displayedVideos.map(profs => equalArrays(profs, [nextProf().id, currentProf(notInterestingId(videoId)).id])).includes(true)
+                    : true
 
+                if (nextProf() && !displayed) {
+                    setActiveProfs([nextProf(), currentProf(notInterestingId(videoId))])
                 } else {
-                    sortList.push(currentProf(notInterestingId(videoId)))
+                    sortList.splice(currentIdxProf + 1, 0, currentProf(notInterestingId(videoId)));
                     setSortList(sortList)
-
-                    const nextProf = allActiveProf.filter(prof => !sortList.includes(prof))[0]
-                    nextProf ? setActiveProfs([middleSortList(), nextProf]) : notProf()
+                    const nextProf = allActiveProf.filter(prof => !sortList.includes(prof))
+                    nextProf.length > 0 ? setActiveProfs([middleSortList(), nextProf[middleProfIdx(nextProf)]]) : notProf()
                 }
             } else {
                 //если выбранной профессии еще нет в списке сортировки
                 const notIntProfIdx = sortList.findIndex(({id}) => id === notInterestingId(videoId))
-                const nextProf = (notIntProfIdx - 1) >= 0 && sortList[notIntProfIdx - 1]
-                //проверка на повторную отрисовку
-                const displayeds = displayedVideos.map(profs => equalArrays(profs, [nextProf.id, currentProf(videoId).id])).includes(true)
 
-                if (nextProf && !displayeds) {
-                    setActiveProfs([nextProf, currentProf(videoId)])
+                const nextProf = () => {
+                    let nextProf
+                    if (sortList.some(({lvl}) => lvl === 1)) {
+                        nextProf = (notIntProfIdx - 1) >= 0 && sortList[notIntProfIdx - 1]
+                    } else {
+                        let profCompare = sortList.filter((prof, i) => i < notIntProfIdx)
+                        const prevCombinations = displayedVideos[displayedVideos.length - 2]
+                        const prevProf = prevCombinations.filter(prof => prof !== videoId)
+                        const idxPrevProf = sortList.findIndex(({id}) => id === prevProf[0])
+
+                        if (sortList.length > 2 && notIntProfIdx > middleProfIdx(sortList)) {
+                            profCompare = sortList.filter((prof, i) => i < notIntProfIdx && i > idxPrevProf)
+                        }
+
+                        nextProf = profCompare[middleProfIdx(profCompare)]
+                    }
+                    return nextProf
+                }
+
+                //проверка на повторную отрисовку
+                const displayeds = nextProf()
+                    ? displayedVideos.map(profs => equalArrays(profs, [nextProf().id, currentProf(videoId).id])).includes(true)
+                    : true
+
+                if (nextProf() && !displayeds) {
+                    setActiveProfs([nextProf(), currentProf(videoId)])
                 } else {
                     const notIntProfIdx = sortList.findIndex(({id}) => id === notInterestingId(videoId))
                     sortList.splice(notIntProfIdx, 0, currentProf(videoId));
+
                     setSortList(sortList)
-                    const nextProf = allActiveProf.filter(prof => !sortList.includes(prof))[0]
-                    !middleSortList() && sortList.push(nextProf) && notProf()
-                    nextProf && middleSortList() ? setActiveProfs([middleSortList(), nextProf]) : notProf()
+                    const nextProf = allActiveProf.filter(prof => !sortList.includes(prof))
+                    !middleSortList() && sortList.push(nextProf[0]) && notProf()
+                    nextProf.length > 0 && middleSortList() ? setActiveProfs([middleSortList(), nextProf[middleProfIdx(nextProf)]]) : notProf()
                 }
             }
         }
